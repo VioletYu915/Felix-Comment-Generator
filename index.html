@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Comment Generator</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background: linear-gradient(160deg, #f8f6f2 0%, #f0ebe3 30%, #f5f2ed 60%, #faf8f5 100%);
+    color: #3d3d3d;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  .container {
+    width: 100%;
+    max-width: 640px;
+    text-align: center;
+  }
+
+  .badge {
+    display: inline-block;
+    background: #fff;
+    border: 1px solid #e8e2d8;
+    border-radius: 100px;
+    padding: 4px 16px;
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: #978a7a;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    margin-bottom: 24px;
+  }
+
+  h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #2c2416;
+    margin-bottom: 8px;
+    letter-spacing: -0.5px;
+  }
+
+  .subtitle {
+    font-size: 0.92rem;
+    color: #a09888;
+    margin-bottom: 28px;
+    line-height: 1.6;
+  }
+
+  .selector-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 28px;
+  }
+
+  .selector-row label {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #8a7e6e;
+    white-space: nowrap;
+  }
+
+  select {
+    appearance: none;
+    -webkit-appearance: none;
+    background: #fffdf9;
+    border: 1px solid #ddd6c8;
+    border-radius: 100px;
+    padding: 10px 40px 10px 18px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #3d382e;
+    cursor: pointer;
+    min-width: 220px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23978a7a' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    font-family: inherit;
+  }
+
+  select:hover {
+    border-color: #c4b8a8;
+  }
+
+  select:focus {
+    outline: none;
+    border-color: #b8a080;
+    box-shadow: 0 0 0 3px rgba(160,130,100,0.12);
+  }
+
+  .card {
+    background: #fffdf9;
+    border: 1px solid #e8e2d8;
+    border-radius: 20px;
+    padding: 44px 36px;
+    min-height: 150px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 32px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03), 0 4px 16px rgba(0,0,0,0.04);
+    transition: border-color 0.35s ease, box-shadow 0.35s ease;
+  }
+
+  .card.copied {
+    border-color: #b8cca6;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03), 0 6px 28px rgba(140,160,120,0.14);
+  }
+
+  .comment-text {
+    font-size: 1.2rem;
+    line-height: 1.75;
+    color: #3d382e;
+    word-break: break-word;
+  }
+
+  .placeholder {
+    color: #c4bbb0;
+    font-size: 1rem;
+    font-style: italic;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: #2c2416;
+    color: #faf7f0;
+    border: none;
+    border-radius: 100px;
+    padding: 14px 40px;
+    font-size: 0.98rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
+    letter-spacing: 0.2px;
+  }
+
+  .btn:hover {
+    background: #3d3424;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 28px rgba(44,36,22,0.18);
+  }
+
+  .btn:active {
+    transform: translateY(0) scale(0.98);
+    box-shadow: 0 2px 8px rgba(44,36,22,0.12);
+  }
+
+  .btn:disabled {
+    background: #c4bbb0;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+
+  .btn svg { opacity: 0.85; }
+
+  .loading-spinner {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid #ddd6c8;
+    border-top-color: #978a7a;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .toast {
+    position: fixed;
+    bottom: 36px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: #2c2416;
+    color: #faf7f0;
+    padding: 10px 26px;
+    border-radius: 100px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    opacity: 0;
+    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
+    pointer-events: none;
+    box-shadow: 0 4px 20px rgba(44,36,22,0.2);
+  }
+
+  .toast.show {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
+
+  .count {
+    font-size: 0.78rem;
+    color: #b8ae9e;
+    margin-top: 28px;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="badge">Random Comment Generator</div>
+  <h1>Felix Instagram Comment</h1>
+  <p class="subtitle">Choose a category, then click to generate &mdash; auto-copied to clipboard</p>
+
+  <div class="selector-row">
+    <label for="setSelect">Category</label>
+    <select id="setSelect" onchange="switchSet(this.value)" disabled>
+      <option>Loading...</option>
+    </select>
+  </div>
+
+  <div class="card" id="card">
+    <span class="placeholder" id="display">Loading comments...</span>
+  </div>
+
+  <button class="btn" id="btn" onclick="generate()" disabled>
+    <span class="loading-spinner"></span>
+    Loading
+  </button>
+
+  <p class="count" id="count">&nbsp;</p>
+</div>
+
+<div class="toast" id="toast">Copied to clipboard</div>
+
+<script>
+var commentSets = {};
+var activeSet = null;
+
+var setSelect = document.getElementById('setSelect');
+var card = document.getElementById('card');
+var display = document.getElementById('display');
+var btn = document.getElementById('btn');
+var countEl = document.getElementById('count');
+var toast = document.getElementById('toast');
+var timer = null;
+
+fetch('data/sets.json')
+  .then(function(r) { return r.json(); })
+  .then(function(config) {
+    var fetches = config.categories.map(function(cat) {
+      return fetch(cat.file)
+        .then(function(r) { return r.text(); })
+        .then(function(text) {
+          text = text.replace(/^﻿/, '');
+          var lines = text.split('\n').filter(function(l) { return l.trim(); });
+          commentSets[cat.name] = lines;
+        });
+    });
+    return Promise.all(fetches).then(function() { return config; });
+  })
+  .then(function(config) {
+    setSelect.innerHTML = '';
+    config.categories.forEach(function(cat) {
+      var opt = document.createElement('option');
+      opt.value = cat.name;
+      opt.textContent = cat.name;
+      setSelect.appendChild(opt);
+    });
+    setSelect.disabled = false;
+
+    activeSet = config.categories[0].name;
+    updateCount();
+
+    btn.disabled = false;
+    btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16"/></svg> Generate';
+    display.textContent = 'Your comment will appear here';
+  })
+  .catch(function(err) {
+    display.textContent = 'Failed to load data. Make sure you are running via http:// (not file://). Start a local server with: python -m http.server 8080';
+    display.style.color = '#c87070';
+    console.error(err);
+  });
+
+function switchSet(name) {
+  activeSet = name;
+  updateCount();
+}
+
+function updateCount() {
+  var n = commentSets[activeSet] ? commentSets[activeSet].length : 0;
+  countEl.textContent = n.toLocaleString() + ' comments in this category';
+}
+
+function generate() {
+  if (!activeSet || !commentSets[activeSet]) return;
+  var pool = commentSets[activeSet];
+  var idx = Math.floor(Math.random() * pool.length);
+  var text = pool[idx];
+  display.textContent = text;
+  display.classList.remove('placeholder');
+  display.style.color = '';
+  copyToClipboard(text);
+  flashCard();
+}
+
+function copyToClipboard(text) {
+  navigator.clipboard.writeText(text).then(function() {
+    showToast();
+  }).catch(function() {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.left = '-9999px';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast();
+  });
+}
+
+function flashCard() {
+  card.classList.add('copied');
+  setTimeout(function() { card.classList.remove('copied'); }, 600);
+}
+
+function showToast() {
+  if (timer) clearTimeout(timer);
+  toast.classList.add('show');
+  timer = setTimeout(function() { toast.classList.remove('show'); }, 1500);
+}
+
+document.addEventListener('keydown', function(e) {
+  if (e.code === 'Space' && e.target === document.body) {
+    e.preventDefault();
+    generate();
+  }
+});
+</script>
+
+</body>
+</html>
