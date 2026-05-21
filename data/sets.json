@@ -1,0 +1,6 @@
+{
+  "categories": [
+    { "name": "FELIX LVCRUISE27", "file": "data/LVcruise27-felix.csv" },
+    { "name": "FELIX LVFW26", "file": "data/LVFW26-felix.csv" }
+  ]
+}
